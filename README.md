@@ -11,7 +11,7 @@ library, which can be accessed here: [https://github.com/tommbendall/tomplot]
 How to get results & plots:
 1. Make sure you have a firedrake with gusto installed, and tomplot installed.
 
-# ----------------------------------------------------------------------------------------------------------------------------------#
+----------------------------------------------------------------------------------
 2. Run the following commands from the `test_cases` directory:
 
   For Figure 1 simply run `python williamson1_convergence.py`, this should generate all the data for the self convergence test
@@ -27,6 +27,6 @@ How to get results & plots:
 
   For Figure 4 run `python dry_baroclinic_channel.py` 
 
-# ----------------------------------------------------------------------------------------------------------------------------------#
+----------------------------------------------------------------------------------
 
 3. Run all plotting scripts from the `plotting_scripts` directory. They are named based on which figure in the paper they produce.
