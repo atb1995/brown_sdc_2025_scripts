@@ -9,6 +9,9 @@ The plotting scripts in this repository use the `tomplot` plotting
 library, which can be accessed here: [https://github.com/tommbendall/tomplot]
 
 How to get results & plots:
+
+----------------------------------------------------------------------------------
+
 1. Make sure you have a firedrake with gusto installed, and tomplot installed.
 
 ----------------------------------------------------------------------------------
@@ -30,3 +33,5 @@ How to get results & plots:
 ----------------------------------------------------------------------------------
 
 3. Run all plotting scripts from the `plotting_scripts` directory. They are named based on which figure in the paper they produce.
+
+----------------------------------------------------------------------------------
