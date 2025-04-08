@@ -24,8 +24,8 @@ from gusto import (
     compressible_hydrostatic_balance, logger, RichardsonNumber,
     RungeKuttaFormulation, Timestepper, IMEX_SSP3, split_continuity_form,
     implicit, explicit, time_derivative, transport, TrapeziumRule, IMEX_Euler,
-    SDC, split_hv_advective_form, Split_DGUpwind, ThetaLimiter, MixedFSLimiter,
-    horizontal, vertical
+    SDC, split_hv_advective_form, SplitDGUpwind, ThetaLimiter, MixedFSLimiter,
+    horizontal_transport, vertical_transport
 )
 
 skamarock_klemp_nonhydrostatic_defaults = {
@@ -74,10 +74,9 @@ def skamarock_klemp_nonhydrostatic(
     base_mesh = PeriodicIntervalMesh(ncolumns, domain_width)
     mesh = ExtrudedMesh(base_mesh, nlayers, layer_height=domain_height/nlayers)
     domain = Domain(mesh, dt, "CG", element_order)
-    
 
     # Equation
-    parameters = CompressibleParameters()
+    parameters = CompressibleParameters(mesh=mesh)
     eqns = CompressibleEulerEquations(domain, parameters, u_transport_option=u_eqn_type)
     eqns = split_continuity_form(eqns)
     eqns = split_hv_advective_form(eqns, "rho")
@@ -110,8 +109,8 @@ def skamarock_klemp_nonhydrostatic(
 
     # Transport schemes
     transport_methods = [DGUpwind(eqns, "u"),
-                        Split_DGUpwind(eqns, "rho"),
-                        Split_DGUpwind(eqns, "theta", ibp=SUPGOptions.ibp)]
+                        SplitDGUpwind(eqns, "rho"),
+                        SplitDGUpwind(eqns, "theta", ibp=SUPGOptions.ibp)]
     nl_solver_parameters = {
     "snes_converged_reason": None,
     "snes_lag_preconditioner_persists":None,
@@ -146,9 +145,9 @@ def skamarock_klemp_nonhydrostatic(
         },
     },}
     eqns.label_terms(lambda t: not any(t.has_label(time_derivative, transport)), implicit)
-    eqns.label_terms(lambda t: t.has_label(transport) and t.has_label(horizontal), explicit)
-    eqns.label_terms(lambda t: t.has_label(transport) and t.has_label(vertical), implicit)
-    eqns.label_terms(lambda t: t.has_label(transport) and not any(t.has_label(horizontal, vertical)), explicit)
+    eqns.label_terms(lambda t: t.has_label(transport) and t.has_label(horizontal_transport), explicit)
+    eqns.label_terms(lambda t: t.has_label(transport) and t.has_label(vertical_transport), implicit)
+    eqns.label_terms(lambda t: t.has_label(transport) and not any(t.has_label(horizontal_transport, vertical_transport)), explicit)
     base_scheme = IMEX_Euler(domain, options=opts,nonlinear_solver_parameters=nl_solver_parameters)
     node_type = "LEGENDRE"
     qdelta_exp = "FE"

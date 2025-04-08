@@ -56,7 +56,7 @@ for i ,(dir, fig_title) in enumerate(zip(dirs, fig_titles)):
 # ---------------------------------------------------------------------------- #
 # Save figure
 # ---------------------------------------------------------------------------- #
-plot_name_new = plot_name+"_"+".png"
+plot_name_new = plot_name+".png"
 print(f'Saving figure to {plot_name_new}')
 fig.savefig(plot_name_new, bbox_inches='tight')
 plt.close()

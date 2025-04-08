@@ -24,7 +24,7 @@ from gusto import (
     CompressibleSolver, Timestepper, split_continuity_form,
     IMEXRungeKutta, time_derivative, transport, implicit, explicit, physics_label,
     IMEX_Euler, SDC, SplitPhysicsTimestepper, IMEX_SSP3, source_label, SUPGOptions,
-    horizontal, vertical, Split_DGUpwind, split_hv_advective_form
+    horizontal_transport, vertical_transport, SplitDGUpwind, split_hv_advective_form
 )
 
 import numpy as np
@@ -79,7 +79,7 @@ def moist_bryan_fritsch(
     domain = Domain(mesh, dt, 'CG', element_order)
 
     # Equation
-    params = CompressibleParameters()
+    params = CompressibleParameters(mesh=mesh)
     tracers = [WaterVapour(), CloudWater()]
     eqns = CompressibleEulerEquations(
         domain, params, active_tracers=tracers, u_transport_option=u_eqn_type
@@ -103,7 +103,7 @@ def moist_bryan_fritsch(
     io = IO(domain, output, diagnostic_fields=diagnostic_fields)
 
     transport_methods = [
-        DGUpwind(eqns, "u"), Split_DGUpwind(eqns, "rho"), Split_DGUpwind(eqns, "theta", ibp=SUPGOptions.ibp),
+        DGUpwind(eqns, "u"), SplitDGUpwind(eqns, "rho"), SplitDGUpwind(eqns, "theta", ibp=SUPGOptions.ibp),
         DGUpwind(eqns, "water_vapour", ibp=SUPGOptions.ibp), DGUpwind(eqns, "cloud_water", ibp=SUPGOptions.ibp) 
     ]
 
@@ -142,9 +142,9 @@ def moist_bryan_fritsch(
     },}
     physics_schemes = [SaturationAdjustment(eqns)]
     eqns.label_terms(lambda t: not any(t.has_label(time_derivative, transport, source_label)), implicit)
-    eqns.label_terms(lambda t: t.has_label(transport) and t.has_label(horizontal), explicit)
-    eqns.label_terms(lambda t: t.has_label(transport) and t.has_label(vertical), implicit)
-    eqns.label_terms(lambda t: t.has_label(transport) and not any(t.has_label(horizontal, vertical)), explicit)
+    eqns.label_terms(lambda t: t.has_label(transport) and t.has_label(horizontal_transport), explicit)
+    eqns.label_terms(lambda t: t.has_label(transport) and t.has_label(vertical_transport), implicit)
+    eqns.label_terms(lambda t: t.has_label(transport) and not any(t.has_label(horizontal_transport, vertical_transport)), explicit)
     base_scheme = IMEX_Euler(domain, options=opts, nonlinear_solver_parameters=nl_solver_parameters)
     node_type = "LEGENDRE"
     qdelta_exp = "FE"
@@ -154,7 +154,6 @@ def moist_bryan_fritsch(
     qdelta_imp = "LU"
     scheme =SDC(base_scheme, domain, M, k, quad_type, node_type, qdelta_imp,
                         qdelta_exp, formulation="Z2N", options=opts, nonlinear_solver_parameters=nl_solver_parameters,final_update=True, initial_guess="copy")
-    #scheme = IMEX_SSP3(domain, nonlinear_solver_parameters=nl_solver_parameters)
     # Time stepper
     stepper = Timestepper(eqns, scheme, io, transport_methods, physics_parametrisations=physics_schemes)
 
@@ -253,7 +252,6 @@ def moist_bryan_fritsch(
     stepper.run(t=0, tmax=tmax)
     end_time=time.time()
     print("Time taken:", end_time-initial_time)
-    print("Total KSP iterations: ", scheme.linear_iterations)
 
 # ---------------------------------------------------------------------------- #
 # MAIN

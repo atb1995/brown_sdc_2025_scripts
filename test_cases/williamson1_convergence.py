@@ -21,9 +21,7 @@ import netCDF4 as nc
 
 day = 24.*60.*60.
 # setup resolution and timestepping parameters for convergence test
-dts = [  1800., 1200., 900.,600., 450.]
-
-dts = [  2400.]
+dts = [  2400., 1800, 1200., 900.]
 tmax = 1*day
 ndumps = 1
 # setup shallow water parameters
@@ -44,9 +42,11 @@ domain = Domain(mesh, dt_true, 'RTCF', degree)
 # Equation
 V = domain.spaces('DG')
 eqns = AdvectionEquation(domain, V, "D")
+print("Opt Cores:", eqns.X.function_space().dim()/50000.)
+
 
 # I/O
-dirname = "williamson_1_true_paper7_ref%s_dt%s_deg%s" % (ref_level, dt_true, degree)
+dirname = "williamson_1_true_paper_ref%s_dt%s_deg%s" % (ref_level, dt_true, degree)
 dumpfreq = int(tmax / (ndumps*dt_true))
 output = OutputParameters(dirname=dirname,
                         dumpfreq=dumpfreq,
@@ -73,7 +73,6 @@ D0 = stepper.fields('D')
 
 u_max = 2*pi*R/(12*day)  # Maximum amplitude of the zonal wind (m/s)
 D_max = 1000.
-#theta, lamda, _ = lonlatr_from_xyz(x[0], x[1], x[2])
 lamda, theta, _ = lonlatr_from_xyz(x[0], x[1], x[2])
 lamda_c=3.*pi/2.
 theta_c=0.
@@ -95,7 +94,7 @@ D0.interpolate(Dexpr)
 # Run
 # ------------------------------------------------------------------------ #
 
-#stepper.run(t=0, tmax=tmax)
+stepper.run(t=0, tmax=tmax)
 
 scheme_index= [0,1,2]
 for dt in dts:
@@ -111,18 +110,13 @@ for dt in dts:
         # Equation
         V = domain.spaces('DG')
         eqns = AdvectionEquation(domain, V, "D")
-        # eqns = split_continuity_form(eqns)
-        # # Label terms are implicit and explicit
-        # eqns.label_terms(lambda t: not any(t.has_label(time_derivative, transport)), implicit)
-        # eqns.label_terms(lambda t: t.has_label(transport), explicit)
         eqns.label_terms(lambda t: not t.has_label(time_derivative), explicit)
         ik = 0
         for s in scheme_index:
 
                 # I/O
-                dirname = "williamson_1_EX_SDC_paper7_ref%s_dt%s_k%s_deg%s" % (ref_level, dt, s, degree)
+                dirname = "williamson_1_EX_SDC_paper_ref%s_dt%s_k%s_deg%s" % (ref_level, dt, s, degree)
                 dumpfreq = int(tmax / (ndumps*dt))
-                print(dumpfreq)
                 output = OutputParameters(dirname=dirname,
                                         dumpfreq=dumpfreq,
                                         checkpoint=True,
@@ -135,13 +129,6 @@ for dt in dts:
                 node_dist = "LEGENDRE"
                 qdelta_imp="BE"
                 qdelta_exp="FE"
-                solver_parameters = {'snes_type': 'newtonls',
-                                      "ksp_atol": 1e-4,
-                                     "ksp_rtol": 1e-3,
-                                                        'ksp_type': 'gmres',
-                                                        'pc_type': 'bjacobi',
-                                                        'sub_pc_type': 'ilu'}
-                
                 solver_parameters = {'snes_type': 'ksponly',
                                        'ksp_type': 'cg',
                                        'pc_type': 'bjacobi',
@@ -151,20 +138,20 @@ for dt in dts:
                 # Time stepper
                 if (s==0):
                         node_type="GAUSS"
-                        M = 4
-                        k = 7
+                        M = 2
+                        k = 3
                         base_scheme=ForwardEuler(domain,solver_parameters=solver_parameters)
                         scheme = SDC(base_scheme, domain, M, k, node_type, node_dist, qdelta_imp, qdelta_exp, nonlinear_solver_parameters=solver_parameters, formulation="Z2N", final_update=True, initial_guess="copy")
                 elif(s==1):
                         node_type="GAUSS"
-                        M=2
-                        k=3
+                        M=3
+                        k=5
                         base_scheme=ForwardEuler(domain,solver_parameters=solver_parameters)
                         scheme = SDC(base_scheme, domain, M, k, node_type, node_dist, qdelta_imp, qdelta_exp, nonlinear_solver_parameters=solver_parameters, formulation="Z2N", final_update=True  , initial_guess="copy")
                 elif (s==2):
                         node_type="GAUSS"
-                        M = 3
-                        k = 5
+                        M = 4
+                        k = 7
                         base_scheme=ForwardEuler(domain,solver_parameters=solver_parameters)
                         scheme = SDC(base_scheme, domain, M, k, node_type, node_dist, qdelta_imp, qdelta_exp, nonlinear_solver_parameters=solver_parameters, formulation="Z2N", final_update=True, initial_guess="copy")
                 transport_methods = [ DGUpwind(eqns, "D")]

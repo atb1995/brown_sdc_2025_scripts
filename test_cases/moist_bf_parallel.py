@@ -24,7 +24,7 @@ from gusto import (
     CompressibleSolver, Timestepper, split_continuity_form,
     IMEXRungeKutta, time_derivative, transport, implicit, explicit, source_label,
     IMEX_Euler, SDC, SplitPhysicsTimestepper, MixedFSOptions, IMEX_SSP3, SUPGOptions,
-    IMEX_ARK2, split_hv_advective_form, Split_DGUpwind, horizontal, vertical, MixedFSLimiter, ThetaLimiter
+    IMEX_ARK2, split_hv_advective_form, SplitDGUpwind, horizontal_transport, vertical_transport, MixedFSLimiter, ThetaLimiter
 )
 import time
 import numpy as np
@@ -80,34 +80,21 @@ def moist_bryan_fritsch(
     domain = Domain(mesh, dt, 'CG', element_order)
 
     # Equation
-    params = CompressibleParameters()
+    params = CompressibleParameters(mesh=mesh)
     tracers = [WaterVapour(), CloudWater()]
     eqns = CompressibleEulerEquations(
         domain, params, active_tracers=tracers, u_transport_option=u_eqn_type)
     eqns = split_continuity_form(eqns)
     eqns = split_hv_advective_form(eqns, "rho")
     eqns = split_hv_advective_form(eqns, "theta")
-    # eqns.label_terms(lambda t: not any(t.has_label(time_derivative, transport, physics_label)), implicit)
-    # eqns.label_terms(lambda t: t.has_label(transport), explicit)
-
-    # eqns = split_continuity_form(eqns)
 
     opts =SUPGOptions(suboptions={"theta": [transport],
                                    "water_vapour":[transport],
                                    "cloud_water": [transport]})
-    # Vt = domain.spaces("theta")
-    # theta_limiter = MixedFSLimiter(
-    #                 eqns,
-    #                 {'theta': ThetaLimiter(Vt)})
-
-
 
     # Check number of optimal cores
     print("Opt Cores:", eqns.X.function_space().dim()/50000.)
     # I/O
-    # output = OutputParameters(
-    #     dirname=dirname+str(my_ensemble.ensemble_comm.rank), dumpfreq=dumpfreq, dump_vtus=False, dump_nc=True
-    # )
     output = OutputParameters(
         dirname=dirname, dumpfreq=dumpfreq, dump_vtus=False, dump_nc=True
     )
@@ -115,11 +102,8 @@ def moist_bryan_fritsch(
     io = IO(domain, output, diagnostic_fields=diagnostic_fields)
 
     transport_methods = [
-        DGUpwind(eqns, "u"), Split_DGUpwind(eqns, "rho"), Split_DGUpwind(eqns, "theta", ibp=SUPGOptions.ibp), DGUpwind(eqns, "water_vapour", ibp=SUPGOptions.ibp), DGUpwind(eqns, "cloud_water", ibp=SUPGOptions.ibp) 
+        DGUpwind(eqns, "u"), SplitDGUpwind(eqns, "rho"), SplitDGUpwind(eqns, "theta", ibp=SUPGOptions.ibp), DGUpwind(eqns, "water_vapour", ibp=SUPGOptions.ibp), DGUpwind(eqns, "cloud_water", ibp=SUPGOptions.ibp) 
     ]
-    # transport_methods = [
-    #     DGUpwind(eqns, "u"), DGUpwind(eqns, "rho"), DGUpwind(eqns, "theta"), DGUpwind(eqns, "water_vapour"), DGUpwind(eqns, "cloud_water") 
-    # ]
 
     nl_solver_parameters = {
     "snes_converged_reason": None,
@@ -156,21 +140,17 @@ def moist_bryan_fritsch(
     },}
     physics_schemes = [SaturationAdjustment(eqns)]
     eqns.label_terms(lambda t: not any(t.has_label(time_derivative, transport, source_label)), implicit)
-    eqns.label_terms(lambda t: t.has_label(transport) and t.has_label(horizontal), explicit)
-    eqns.label_terms(lambda t: t.has_label(transport) and t.has_label(vertical), implicit)
-    eqns.label_terms(lambda t: t.has_label(transport) and not any(t.has_label(horizontal, vertical)), explicit)
+    eqns.label_terms(lambda t: t.has_label(transport) and t.has_label(horizontal_transport), explicit)
+    eqns.label_terms(lambda t: t.has_label(transport) and t.has_label(vertical_transport), implicit)
+    eqns.label_terms(lambda t: t.has_label(transport) and not any(t.has_label(horizontal_transport, vertical_transport)), explicit)
     base_scheme = IMEX_Euler(domain, options=opts, nonlinear_solver_parameters=nl_solver_parameters)
     node_type = "LEGENDRE"
     qdelta_exp = "MIN-SR-NS"
     quad_type = "GAUSS"
     k = 3
     qdelta_imp = "MIN-SR-FLEX"
-    # scheme =Parallel_SDC(base_scheme, domain, M, k, quad_type, node_type, qdelta_imp,
-    #                     qdelta_exp, options=opts, nonlinear_solver_parameters=nl_solver_parameters,
-    #                     final_update=False, initial_guess="copy", communicator=my_ensemble)
     scheme =SDC(base_scheme, domain, M, k, quad_type, node_type, qdelta_imp,
                         qdelta_exp, formulation="Z2N", options=opts, nonlinear_solver_parameters=nl_solver_parameters,final_update=True, initial_guess="copy")
-    #scheme = IMEX_SSP3(domain, nonlinear_solver_parameters=nl_solver_parameters)
     # Time stepper
     stepper = Timestepper(eqns, scheme, io, transport_methods, physics_parametrisations=physics_schemes)
 

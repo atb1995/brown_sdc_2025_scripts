@@ -48,7 +48,7 @@ u_eqn_type = 'vector_advection_form'
 
 # Equation
 Tsurf = 300.
-parameters = CompressibleParameters()
+parameters = CompressibleParameters(mesh=mesh)
 eqns = CompressibleEulerEquations(domain, parameters, u_transport_option=u_eqn_type)
 eqns = split_continuity_form(eqns)
 eqns = split_hv_advective_form(eqns, "rho")
@@ -78,8 +78,8 @@ io = IO(domain, output, diagnostic_fields=diagnostic_fields)
 
 # Transport schemes
 transport_methods = [DGUpwind(eqns, "u"),
-                    Split_DGUpwind(eqns, "rho"),
-                    Split_DGUpwind(eqns, "theta", ibp=SUPGOptions.ibp)]
+                    SplitDGUpwind(eqns, "rho"),
+                    SplitDGUpwind(eqns, "theta", ibp=SUPGOptions.ibp)]
 
 nl_solver_parameters = {
 "snes_converged_reason": None,
@@ -122,9 +122,9 @@ linear_solver_parameters = {'snes_type': 'ksponly',
                         'sub_pc_type': 'ilu'}
 eqns.label_terms(lambda t: not any(t.has_label(time_derivative, transport)), implicit)
 eqns.label_terms(lambda t: t.has_label(transport), explicit)
-eqns.label_terms(lambda t: t.has_label(transport) and t.has_label(horizontal), explicit)
-eqns.label_terms(lambda t: t.has_label(transport) and t.has_label(vertical), implicit)
-eqns.label_terms(lambda t: t.has_label(transport) and not any(t.has_label(horizontal, vertical)), explicit)
+eqns.label_terms(lambda t: t.has_label(transport) and t.has_label(horizontal_transport), explicit)
+eqns.label_terms(lambda t: t.has_label(transport) and t.has_label(vertical_transport), implicit)
+eqns.label_terms(lambda t: t.has_label(transport) and not any(t.has_label(horizontal_transport, vertical_transport)), explicit)
 base_scheme = IMEX_Euler(domain, options=opts,nonlinear_solver_parameters=nl_solver_parameters)
 if order == 1:
     node_type = "LEGENDRE"

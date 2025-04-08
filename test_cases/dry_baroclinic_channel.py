@@ -21,13 +21,13 @@ from gusto import (
     CompressibleEulerEquations, OutputParameters, IO, logger, SSPRK3,
     DGUpwind, SemiImplicitQuasiNewton, compressible_hydrostatic_balance,
     Perturbation, SaturationAdjustment, ForwardEuler, thermodynamics,
-    Temperature, Exner, Pressure, Split_DGUpwind,
+    Temperature, Exner, Pressure, SplitDGUpwind,
     time_derivative, transport, implicit, explicit, split_continuity_form,
-    horizontal, vertical,
+    horizontal_transport, vertical_transport,
     SDC, IMEX_Euler, Timestepper, IMEX_SSP3, SpongeLayerParameters, IMEX_ARK2,
     XComponent, YComponent, ZComponent, ImplicitMidpoint, prognostic, coriolis,
     split_hv_advective_form, TrapeziumRule, IMEXRungeKutta, MixedFSLimiter,
-    ThetaLimiter, SUPGOptions, split_hv_continuity_form)
+    ThetaLimiter, SUPGOptions)
 import numpy as np
 import time
 
@@ -36,9 +36,9 @@ dry_baroclinic_channel_defaults = {
     'ny': 24,                  # number of columns in y-direction
     'nlayers': 20,             # number of layers in mesh
     'dt': 1800,                # 30 minutes
-    'tmax': 24*60*60*12,            # 15 days
+    'tmax': 24*60*60*12,            # 12 days
     'dumpfreq': 48,           # Corresponds to every 1 day with default opts
-    'dirname': 'dry_baro_channel_exner'  # output directory
+    'dirname': 'dry_baro_channel'  # output directory
 }
 
 
@@ -93,7 +93,7 @@ def dry_baroclinic_channel(
     x, y, z = SpatialCoordinate(mesh)
 
     # Equation
-    params = CompressibleParameters(Omega=omega*sin(phi0))
+    params = CompressibleParameters(mesh=mesh, Omega=omega*sin(phi0))
     eqns = CompressibleEulerEquations(
         domain, params, u_transport_option=u_eqn_type,
         no_normal_flow_bc_ids=[1, 2]
@@ -106,9 +106,9 @@ def dry_baroclinic_channel(
     eqns = split_hv_advective_form(eqns, "rho")
     eqns = split_hv_advective_form(eqns, "theta")
     eqns.label_terms(lambda t: not any(t.has_label(time_derivative, transport)), implicit)
-    eqns.label_terms(lambda t: t.has_label(transport) and t.has_label(horizontal), explicit)
-    eqns.label_terms(lambda t: t.has_label(transport) and t.has_label(vertical), implicit)
-    eqns.label_terms(lambda t: t.has_label(transport) and not any(t.has_label(horizontal, vertical)), explicit)
+    eqns.label_terms(lambda t: t.has_label(transport) and t.has_label(horizontal_transport), explicit)
+    eqns.label_terms(lambda t: t.has_label(transport) and t.has_label(vertical_transport), implicit)
+    eqns.label_terms(lambda t: t.has_label(transport) and not any(t.has_label(horizontal_transport, vertical_transport)), explicit)
     Vt = domain.spaces('theta')
     theta_limiter = MixedFSLimiter(
                     eqns,
@@ -125,8 +125,8 @@ def dry_baroclinic_channel(
     io = IO(domain, output, diagnostic_fields=diagnostic_fields)
 
     transport_methods = [DGUpwind(eqns, "u"),
-                     Split_DGUpwind(eqns, "rho"),
-                     Split_DGUpwind(eqns, "theta", ibp=SUPGOptions.ibp)]
+                     SplitDGUpwind(eqns, "rho"),
+                     SplitDGUpwind(eqns, "theta", ibp=SUPGOptions.ibp)]
 
     nl_solver_parameters = {
     "snes_converged_reason": None,
