@@ -69,10 +69,7 @@ def plot_errors(dts, errors_D, scheme_names, fig_title, cols,ticks):
         ax.scatter(x, y, label=scheme_name, color=cols[i], marker=ticks[i])
 
         # Calculate and plot best fit line
-        if (i==2):
-            slope, intercept = np.polyfit(x, y, 1)
-        else:
-            slope, intercept = np.polyfit(x, y, 1)
+        slope, intercept = np.polyfit(x, y, 1)
         print(f"Slope: {slope}, Intercept: {intercept}")
         ax.plot(x, slope * x + intercept, color=cols[i], label=f'{scheme_name} (slope={slope:.2f})', marker='None', linewidth=1.5)
 
@@ -82,7 +79,7 @@ def plot_errors(dts, errors_D, scheme_names, fig_title, cols,ticks):
     plt.tight_layout()
     plt.subplots_adjust(left=0.2, right=0.8)
     plt.legend()
-    plt.savefig("../plots/"+ fig_title)
+    plt.savefig(fig_title)
     print(f"Figure saved as {fig_title}")
 
 def main():
@@ -90,19 +87,19 @@ def main():
     dt_true = 0.5
     ref_level = 5
     degree = 1
-    scheme_indicies = [0, 1, 2]
+    scheme_indicies = [1, 2, 0]
     scheme_names = ["SDC(2,3)", "SDC(3,5)", "SDC(4,7)"]
     dts= [2400., 1800., 1200., 900.]
     cols = ['r', 'b', 'g']
     ticks = ['o', '^', 'x']
     file_path = "../test_cases/results/"
     file_name = "chkpt.h5"
-    true_data_name = f"williamson_1_true_paper_ref{ref_level}_dt{dt_true}_deg{degree}"
+    true_data_name = f"williamson_1_true_paper7_ref{ref_level}_dt{dt_true}_deg{degree}"
     data_names=[]
     for id in scheme_indicies:
-        data_name = [f"williamson_1_EX_SDC_paper_ref{ref_level}_dt{dt}_k{id}_deg{degree}" for dt in dts]
+        data_name = [f"williamson_1_EX_SDC_paper7_ref{ref_level}_dt{dt}_k{id}_deg{degree}" for dt in dts]
         data_names.append(data_name)
-    fig_title = f"paper_fig_1"
+    fig_title = f"../plots/paper_fig_1_ref{ref_level}.png"
 
     # Load true solution
     true_data = load_true_solution(file_path, true_data_name, file_name)

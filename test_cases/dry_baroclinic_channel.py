@@ -110,9 +110,6 @@ def dry_baroclinic_channel(
     eqns.label_terms(lambda t: t.has_label(transport) and t.has_label(vertical_transport), implicit)
     eqns.label_terms(lambda t: t.has_label(transport) and not any(t.has_label(horizontal_transport, vertical_transport)), explicit)
     Vt = domain.spaces('theta')
-    theta_limiter = MixedFSLimiter(
-                    eqns,
-                    {'theta': ThetaLimiter(Vt)})
 
     opts =SUPGOptions(suboptions={"theta":[transport]})
 
@@ -170,7 +167,7 @@ def dry_baroclinic_channel(
                                 'sub_pc_type': 'ilu'}
 
     # IMEX time stepper
-    base_scheme = IMEX_Euler(domain, limiter = theta_limiter, options = opts, nonlinear_solver_parameters=nl_solver_parameters, linear_solver_parameters=linear_solver_parameters)
+    base_scheme = IMEX_Euler(domain, options = opts, nonlinear_solver_parameters=nl_solver_parameters, linear_solver_parameters=linear_solver_parameters)
     node_type = "LEGENDRE"
     qdelta_imp = "LU"
     qdelta_exp = "FE"
@@ -179,7 +176,7 @@ def dry_baroclinic_channel(
     k = 3
     qdelta_imp = "LU"
     scheme =SDC(base_scheme, domain, M, k, quad_type, node_type, qdelta_imp,
-                        qdelta_exp, formulation="Z2N", limiter = theta_limiter, options = opts,  nonlinear_solver_parameters=nl_solver_parameters,final_update=True,
+                        qdelta_exp, formulation="Z2N", options = opts,  nonlinear_solver_parameters=nl_solver_parameters,final_update=True,
                         linear_solver_parameters=linear_solver_parameters, initial_guess="copy")
 
     #Time stepper

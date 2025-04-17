@@ -70,15 +70,15 @@ field_name= "theta"
 # When copying this example these should not be relative to this file
 plot_dir = f'{abspath(dirname(__file__))}/'
 plot_dir =  "../plots/"
-plot_name = f'{plot_dir}/paper_fig_2.png'
+plot_name = f'{plot_dir}/paper_fig_2'
 # ---------------------------------------------------------------------------- #
 # Data extraction
 # ---------------------------------------------------------------------------- #
 all_error_data = []
 dx_data = []
 for order in orders:
-    field_path = "../test_cases/results/gravity_wave_imex_sdc_paper_o%s_dx_"%(order, order)
-    true_field_path = "../test_cases/results/gravity_wave_imex_sdc_paper_o%s_dx_"%(order, order)
+    field_path = "../test_cases/results/gravity_wave_imex_sdc_paper_o%s_dx_"%(order)
+    true_field_path = "../test_cases/results/gravity_wave_imex_sdc_paper_o%s_dx_"%(order)
     dt_true = "0.15"
     dt_values=       [  "6.0",  "3.0", "1.5", "1.0"]
     if order == 1:
@@ -152,7 +152,6 @@ ax1.set_ylabel(ylabel)
 results_dir = "../test_cases/results/skamarock_klemp_nonhydrostatic"
 
 results_file_name = f'{results_dir}/field_output.nc'
-plot_name = f'{plot_dir}/gw_theta_pert'
 # ---------------------------------------------------------------------------- #
 # Things that should be altered based on the plot
 # ---------------------------------------------------------------------------- #

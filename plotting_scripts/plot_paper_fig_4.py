@@ -57,6 +57,7 @@ for time_idx in time_idxs:
             # Data extraction
             # ------------------------------------------------------------------------ #
             field_data = extract_gusto_field(data_file, field_name, time_idx=time_idx) #- extract_gusto_field(data_file, field_name, time_idx=0)
+            coords_X, coords_Y, coords_Z = extract_gusto_coords(data_file, field_name)
             field_data_new, coords_X, coords_Y, coords_Z = reshape_gusto_data(field_data, coords_X, coords_Y, coords_Z,
                         other_arrays=None)
             if (field_name=='Temperature'):
@@ -81,7 +82,7 @@ for time_idx in time_idxs:
                                         contours, cmap=cmap, line_contours=lines)
             add_colorbar_ax(ax, cf, field_label, cbar_labelpad=-15)
             # Stop ylabel being generated for second plot
-            ylabel = True if i == 0 else None)
+            ylabel = True if i == 0 else None
 
             ax[i].set_ylabel('y / m')
         # ---------------------------------------------------------------------------- #
