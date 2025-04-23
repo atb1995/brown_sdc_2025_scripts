@@ -12,7 +12,7 @@ How to get results & plots:
 
 ----------------------------------------------------------------------------------
 
-1. Make sure you have a firedrake with gusto installed, and tomplot installed.
+1. Make sure you have a firedrake with gusto installed, and tomplot installed. The results in the paper were ran from gusto at commit a5e045a6e16ac318eb00db9bf291595df449aacb.
 
 ----------------------------------------------------------------------------------
 2. Run the following commands from the `test_cases` directory:
